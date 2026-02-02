@@ -1,0 +1,33 @@
+---
+- name: Download Grafana GPG key
+  get_url:
+    url: https://rpm.grafana.com/gpg.key
+    dest: /tmp/grafana-gpg.key
+
+- name: Import Grafana GPG key
+  rpm_key:
+    key: /tmp/grafana-gpg.key
+    state: present
+
+- name: Add Grafana repository
+  yum_repository:
+    name: grafana
+    description: grafana
+    baseurl: https://rpm.grafana.com
+    repo_gpgcheck: yes
+    enabled: yes
+    gpgcheck: yes
+    gpgkey: https://rpm.grafana.com/gpg.key
+    sslverify: yes
+    sslcacert: /etc/pki/tls/certs/ca-bundle.crt
+
+- name: Install Grafana
+  dnf:
+    name: grafana
+    state: present
+
+- name: Enable and start Grafana service
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
