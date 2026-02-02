@@ -1,0 +1,19 @@
+---
+- name: Install Docker from default repository
+  dnf:
+    name: docker
+    state: present
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Add current user to docker group (optional)
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+  when: ansible_user is defined
