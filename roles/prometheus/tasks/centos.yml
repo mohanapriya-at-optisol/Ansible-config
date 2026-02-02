@@ -1,0 +1,52 @@
+---
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_check
+  ignore_errors: yes
+
+- name: Install Docker if not present
+  include_role:
+    name: docker
+    tasks_from: ubuntu.yml
+  when: docker_check.failed
+
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Create prometheus configuration directory
+  file:
+    path: /opt/prometheus
+    state: directory
+    mode: '0755'
+
+- name: Create prometheus configuration file
+  copy:
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+    dest: /opt/prometheus/prometheus.yml
+    mode: '0644'
+
+- name: Create prometheus data volume
+  docker_volume:
+    name: prometheus-data
+
+- name: Run prometheus container
+  docker_container:
+    name: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - "/opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "prometheus-data:/prometheus"
+    restart_policy: unless-stopped
+    state: started
+
