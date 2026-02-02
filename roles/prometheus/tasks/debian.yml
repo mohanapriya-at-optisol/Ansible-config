@@ -1,67 +1,52 @@
 ---
-- name: Create node_exporter group
-  group:
-    name: node_exporter
-    state: present
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_check
+  ignore_errors: yes
 
-- name: Create node_exporter user
-  user:
-    name: node_exporter
-    group: node_exporter
-    system: yes
-    shell: /bin/false
-    home: /opt/node_exporter
-    create_home: no
+- name: Install Docker if not present
+  include_role:
+    name: docker
+    tasks_from: ubuntu.yml
+  when: docker_check.failed
 
-- name: Create node_exporter directory
-  file:
-    path: /opt/node_exporter
-    state: directory
-    owner: node_exporter
-    group: node_exporter
-    mode: '0755'
-
-- name: Download node_exporter
-  get_url:
-    url: https://github.com/prometheus/node_exporter/releases/download/v1.10.2/node_exporter-1.10.2.linux-amd64.tar.gz
-    dest: /tmp/node_exporter-1.10.2.linux-amd64.tar.gz
-
-- name: Extract node_exporter
-  unarchive:
-    src: /tmp/node_exporter-1.10.2.linux-amd64.tar.gz
-    dest: /tmp
-    remote_src: yes
-
-- name: Copy node_exporter binary
-  copy:
-    src: /tmp/node_exporter-1.10.2.linux-amd64/node_exporter
-    dest: /opt/node_exporter/node_exporter
-    owner: node_exporter
-    group: node_exporter
-    mode: '0755'
-    remote_src: yes
-
-- name: Create node_exporter systemd service
-  copy:
-    content: |
-      [Unit]
-      Description=Node Exporter
-      After=network.target
-
-      [Service]
-      User=node_exporter
-      Group=node_exporter
-      Type=simple
-      ExecStart=/opt/node_exporter/node_exporter
-
-      [Install]
-      WantedBy=multi-user.target
-    dest: /etc/systemd/system/node_exporter.service
-
-- name: Start and enable node_exporter service
+- name: Ensure Docker service is running
   systemd:
-    name: node_exporter
+    name: docker
     state: started
     enabled: yes
-    daemon_reload: yes
+
+- name: Create prometheus configuration directory
+  file:
+    path: /opt/prometheus
+    state: directory
+    mode: '0755'
+
+- name: Create prometheus configuration file
+  copy:
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+    dest: /opt/prometheus/prometheus.yml
+    mode: '0644'
+
+- name: Create prometheus data volume
+  docker_volume:
+    name: prometheus-data
+
+- name: Run prometheus container
+  docker_container:
+    name: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - "/opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "prometheus-data:/prometheus"
+    restart_policy: unless-stopped
+    state: started
 
