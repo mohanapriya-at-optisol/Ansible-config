@@ -142,7 +142,7 @@ The script will:
 # DynamoDB Configuration
 DYNAMODB_TABLE=ansible-inventory
 DYNAMODB_REGION=ap-south-1
-
+```
 
 
 ## 📁 Project Structure
@@ -168,28 +168,34 @@ ansible-automation/
 ### Common Issues
 
 #### 1. Missing OS Files
+
 ```
 Error: Could not find specified file in role: tasks/amazonlinux.yml
 ```
 **Solution**: Create missing OS-specific task files or use symlinks:
+
 ```bash
 cd roles/nodeexporter/tasks
 ln -s amazonlinux2023.yml amazonlinux.yml
 ```
 
 #### 2. SSM Connection Issues
+
 ```
 Error: Failed to connect via SSM
 ```
+
 **Solution**: Verify:
 - SSM Agent is running on EC2 instance
 - IAM role has SSM permissions
 - S3 bucket exists and is accessible
 
 #### 3. DynamoDB Access Issues
+
 ```
 Error: Unable to access DynamoDB table
 ```
+
 **Solution**: Check:
 - AWS credentials are configured
 - IAM permissions for DynamoDB
@@ -197,6 +203,7 @@ Error: Unable to access DynamoDB table
 
 ### Debug Mode
 Add debug output to playbook execution:
+
 ```bash
 # Edit the script to add -vvv flag
 ['ansible-playbook', '-vvv', '-i', inventory_file, playbook_file]
