@@ -1,0 +1,16 @@
+- become: true
+  hosts: managed-node-3
+  name: Install software on managed-node-3
+  tasks:
+  - include_role:
+      name: nodeexporter
+      tasks_from: amazonlinux2023.yml
+    name: Install nodeexporter
+- become: true
+  hosts: managed-node-1
+  name: Install software on managed-node-1
+  tasks:
+  - include_role:
+      name: nginx
+      tasks_from: ubuntu.yml
+    name: Install nginx
