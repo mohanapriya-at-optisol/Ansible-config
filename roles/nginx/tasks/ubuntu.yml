@@ -1,0 +1,38 @@
+---
+- name: Install prerequisite packages
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - ca-certificates
+      - lsb-release
+      - ubuntu-keyring
+    state: present
+    update_cache: yes
+
+- name: Download and add NGINX GPG key
+  shell: |
+    curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+  args:
+    creates: /usr/share/keyrings/nginx-archive-keyring.gpg
+
+- name: Add NGINX repository
+  lineinfile:
+    path: /etc/apt/sources.list.d/nginx.list
+    line: "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/ubuntu {{ ansible_distribution_release }} nginx"
+    create: yes
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install NGINX
+  apt:
+    name: nginx
+    state: present
+
+- name: Enable and start NGINX
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
