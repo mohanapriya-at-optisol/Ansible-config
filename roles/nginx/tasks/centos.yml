@@ -1,0 +1,29 @@
+---
+- name: Install prerequisite packages
+  dnf:
+    name: yum-utils
+    state: present
+
+- name: Create NGINX repository file
+  copy:
+    content: |
+      [nginx-stable]
+      name=nginx stable repo
+      baseurl=https://nginx.org/packages/centos/$releasever/$basearch/
+      gpgcheck=1
+      enabled=1
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
+    dest: /etc/yum.repos.d/nginx.repo
+    mode: '0644'
+
+- name: Install NGINX
+  dnf:
+    name: nginx
+    state: present
+
+- name: Enable and start NGINX
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
